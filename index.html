@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #818cf8;
+            --text-color: #333;
+            --bg-color: #f9fafb;
+            --container-bg: #fff;
+            --user-msg-bg: #e0e7ff;
+            --ai-msg-bg: #f3f4f6;
+            --border-color: #e5e7eb;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        
+        body.dark {
+            --text-color: #f3f4f6;
+            --bg-color: #1f2937;
+            --container-bg: #111827;
+            --user-msg-bg: #374151;
+            --ai-msg-bg: #1f2937;
+            --border-color: #374151;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--primary-color);
+        }
+        
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .theme-switch {
+            display: flex;
+            align-items: center;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+            margin-left: 10px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .options-bar {
+            padding: 15px;
+            background-color: var(--container-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .select-wrapper {
+            position: relative;
+            width: 200px;
+        }
+        
+        .select-wrapper select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            appearance: none;
+        }
+        
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 12px;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        
+        .export-btn {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .export-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            border-bottom-right-radius: 4px;
+            color: var(--text-color);
+        }
+        
+        .message.ai {
+            align-self: flex-start;
+            background-color: var(--ai-msg-bg);
+            border-bottom-left-radius: 4px;
+            color: var(--text-color);
+        }
+        
+        .typing-indicator {
+            align-self: flex-start;
+            padding: 15px 20px;
+            background-color: var(--ai-msg-bg);
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            display: inline-block;
+            opacity: 0.4;
+            animation: typing 1.5s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+        
+        @keyframes typing {
+            0% { opacity: 0.4; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-5px); }
+            100% { opacity: 0.4; transform: translateY(0); }
+        }
+        
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-field {
+            flex: 1;
+            position: relative;
+        }
+        
+        .input-field textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            resize: none;
+            height: 50px;
+            line-height: 1.5;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+        
+        .input-field textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        
+        .send-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .select-wrapper {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8 S16.41,20,12,20z M15.5,11c0.83,0,1.5-0.67,1.5-1.5S16.33,8,15.5,8S14,8.67,14,9.5S14.67,11,15.5,11z M8.5,11 c0.83,0,1.5-0.67,1.5-1.5S9.33,8,8.5,8S7,8.67,7,9.5S7.67,11,8.5,11z M12,17.5c2.33,0,4.31-1.46,5.11-3.5H6.89 C7.69,16.04,9.67,17.5,12,17.5z"/>
+                </svg>
+                <h1>AI Chat Assistant</h1>
+            </div>
+            <div class="theme-switch">
+                <span>Dark Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="themeSwitcher">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="options-bar">
+                <div class="select-wrapper">
+                    <select id="scope">
+                        <option value="general knowledge">General Knowledge</option>
+                        <option value="technology">Technology</option>
+                        <option value="Mental Health">Mental Health</option>
+                        <option value="programming">Programming</option>
+                        <option value="science">Science</option>
+                        <option value="Carreer">Carreer</option>
+                        <option value="history">History</option>
+                        <option value="business">Business</option>
+                    </select>
+                </div>
+                <button class="export-btn" onclick="exportChat()">Export Chat</button>
+            </div>
+            
+            <div class="chat-history" id="chatHistory">
+                <!-- Chat messages will be appended here -->
+            </div>
+            
+            <div class="input-area">
+                <div class="input-field">
+                    <textarea id="userInput" placeholder="Type your message here..." rows="1"></textarea>
+                </div>
+                <button class="send-btn" onclick="getAIResponse()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.01 21L23 12 2.01 3 2 10L17 12 2 14L2.01 21Z" fill="white"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your existing JavaScript code goes here
+        let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+
+        function parseMarkdown(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+                .replace(/_(.*?)_/g, '<em>$1</em>');
+        }
+
+        function appendMessage(role, text) {
+            const chatHistoryContainer = document.getElementById('chatHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = parseMarkdown(text);
+            chatHistoryContainer.appendChild(messageDiv);
+            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+
+            if (role === 'ai') speakText(text);
+        }
+
+        function showTypingIndicator() {
+            const chatHistoryContainer = document.getElementById('chatHistory');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            chatHistoryContainer.appendChild(typingDiv);
+            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        function speakText(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        function saveHistory() {
+            localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+        }
+
+        function restoreHistory() {
+            chatHistory.forEach(msg => appendMessage(msg.role, msg.text));
+        }
+
+        async function getAIResponse() {
+            const input = document.getElementById('userInput').value.trim();
+            const scope = document.getElementById('scope').value;
+
+            if (!input) return;
+
+            appendMessage('user', input);
+            chatHistory.push({ role: "user", text: input });
+            saveHistory();
+            document.getElementById('userInput').value = "";
+
+            showTypingIndicator();
+
+            let fullPrompt = `You're an expert in ${scope}. Here's the conversation:\n\n`;
+            chatHistory.forEach(msg => {
+                fullPrompt += `${msg.role === "user" ? "User" : "AI"}: ${msg.text}\n`;
+            });
+
+            const apiKey = "AIzaSyDBNvMiSrEK0Dw8PnQQxK_qsokVoQbSWfs";
+            const model = "models/gemini-1.5-pro-002";
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${apiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+                });
+
+                const data = await res.json();
+                const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+                chatHistory.push({ role: "AI", text: aiReply });
+                saveHistory();
+
+                removeTypingIndicator();
+                appendMessage('ai', aiReply);
+            } catch (error) {
+                removeTypingIndicator();
+                appendMessage('ai', "Oops! Something went wrong.");
+            }
+        }
+
+        function exportChat() {
+            let text = '';
+            chatHistory.forEach(msg => {
+                text += `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.text}\n\n`;
+            });
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'chat.txt';
+            a.click();
+        }
+
+        document.getElementById("themeSwitcher").addEventListener("change", function() {
+            document.body.classList.toggle("dark");
+            localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+        });
+
+        window.addEventListener("DOMContentLoaded", () => {
+            if (localStorage.getItem("theme") === "dark") {
+                document.body.classList.add("dark");
+                document.getElementById("themeSwitcher").checked = true;
+            }
+            restoreHistory();
+        });
+
+        // Add this for better UX - allow Enter key to send message
+        document.getElementById('userInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                getAIResponse();
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('userInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    </script>
+</body>
+</html>
