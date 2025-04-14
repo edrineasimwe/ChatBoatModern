@@ -77,7 +77,7 @@ async function getAIResponse() {
 
     showTypingIndicator();
 
-    let fullPrompt = `You're an expert in ${scope}. Here's the conversation:\n\n`;
+    let fullPrompt = `You're an expert in ${scope} and only well vast in ${scope}. If asked anything related to another field, please respond with I am not well vast in that field and give a very abstract response. Here's the conversation:\n\n`;
     chatHistory.forEach(msg => {
         fullPrompt += `${msg.role === "user" ? "User" : "AI"}: ${msg.text}\n`;
     });
